@@ -102,6 +102,15 @@ const SCENARIOS = [
     expectedSteps: 6,
     difficulty: 'hard',
   },
+
+  // === REAL-WORLD E-COMMERCE: Orange.pl ===
+  {
+    name: 'orange-iphone-cart',
+    url: 'https://www.orange.pl',
+    goal: 'dodaj do koszyka telefon iphone najnowszy z abonamentem najmniejszym i przejdź na dane zamawiającego',
+    expectedSteps: 15,
+    difficulty: 'hard',
+  },
 ];
 
 module.exports = { SCENARIOS };

@@ -121,7 +121,7 @@ async function runWithBil(scenario) {
   function call(method, params = {}) {
     return new Promise((resolve, reject) => {
       const id = ++msgId;
-      const timeout = setTimeout(() => { pending.delete(id); reject(new Error('timeout')); }, 45000);
+      const timeout = setTimeout(() => { pending.delete(id); reject(new Error('timeout ' + method)); }, 180000);
       pending.set(id, { resolve, reject, timeout });
       server.stdin.write(JSON.stringify({ jsonrpc: '2.0', id, method, params }) + '\n');
     });
@@ -207,7 +207,7 @@ async function runWithClassic(scenario) {
   function call(method, params = {}) {
     return new Promise((resolve, reject) => {
       const id = ++msgId;
-      const timeout = setTimeout(() => { pending.delete(id); reject(new Error('timeout')); }, 45000);
+      const timeout = setTimeout(() => { pending.delete(id); reject(new Error('timeout ' + method)); }, 120000);
       pending.set(id, { resolve, reject, timeout });
       server.stdin.write(JSON.stringify({ jsonrpc: '2.0', id, method, params }) + '\n');
     });
