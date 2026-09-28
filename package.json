@@ -31,7 +31,10 @@
     "jev": "node src/jev-proxy/cli.js",
     "bil:test": "playwright test -c src/jev-proxy src/jev-proxy/__tests__/",
     "bil:e2e": "node src/jev-proxy/e2e-test.js",
-    "bil:benchmark": "node src/jev-proxy/benchmark/runner.js"
+    "bil:benchmark": "node src/jev-proxy/benchmark/runner.js",
+    "bil:benchmark:both": "node src/jev-proxy/benchmark/runner.js --both",
+    "bil:benchmark:classic": "node src/jev-proxy/benchmark/runner.js --classic",
+    "bil:benchmark:orange": "node src/jev-proxy/benchmark/runner.js --scenario orange-iphone-cart --both"
   },
   "exports": {
     "./package.json": "./package.json",

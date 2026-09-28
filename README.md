@@ -1,3 +1,33 @@
+# Playwright MCP + JEV (Browser Intent Layer)
+
+> 🚀 **Semantic Browser Intent Layer for LLMs with 98%+ Token Savings.**  
+> Powered by Playwright MCP + OpenRouter Decisions API (`typesafe/jev-1.13`).  
+> 📖 **Pełna dokumentacja silnika JEV, benchmarków i opcji:** [src/jev-proxy/README.md](src/jev-proxy/README.md).
+
+### ⚡ Szybki Start:
+```bash
+# 1. Konfiguracja klucza w .env
+cp .env.example .env
+
+# 2. Uruchomienie proxy JEV
+npm run jev -- --headless
+
+# 3. Uruchomienie benchmarku na żywym portalu Orange.pl
+npm run bil:benchmark:orange
+```
+
+### 📊 Benchmark Summary (Orange.pl e-commerce flow):
+| Metryka | Vanilla Playwright MCP | Browser Intent Layer (BIL + JEV) | Zysk |
+|---|---|---|---|
+| **Tokeny do głównego LLM** | ~10 015 – 60 000+ tokenów | **~160 – 250 tokenów** | **98% redukcji tokenów!** 🚀 |
+| **Payload do kontekstu LLM** | 36 KB – 73 KB na krok | **0 KB** (przetwarzane lokalnie) | Czysty kontekst, 0 halucynacji |
+| **Koszt per sesja** | $0.15 – $0.50 (modele GPT-4o / Claude) | **$0.0001 – $0.0004** | Setki razy taniej |
+| **Narzędzia widoczne dla LLM** | 20+ mikronarzędzi DOM | **7 narzędzi intencji (Intent-Only)** | -2 500 tokenów na zapytanie |
+
+---
+
+## Original Playwright MCP Documentation
+
 ## Playwright MCP
 
 A Model Context Protocol (MCP) server that provides browser automation capabilities using [Playwright](https://playwright.dev). This server enables LLMs to interact with web pages through structured accessibility snapshots, bypassing the need for screenshots or visually-tuned models.
