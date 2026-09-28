@@ -27,7 +27,11 @@
     "docker-build": "docker build --no-cache -t playwright-mcp-dev:latest .",
     "docker-rm": "docker rm playwright-mcp-dev",
     "docker-run": "docker run -it -p 8080:8080 --name playwright-mcp-dev playwright-mcp-dev:latest",
-    "roll": "node roll.js"
+    "roll": "node roll.js",
+    "jev": "node src/jev-proxy/cli.js",
+    "bil:test": "playwright test -c src/jev-proxy src/jev-proxy/__tests__/",
+    "bil:e2e": "node src/jev-proxy/e2e-test.js",
+    "bil:benchmark": "node src/jev-proxy/benchmark/runner.js"
   },
   "exports": {
     "./package.json": "./package.json",
@@ -46,6 +50,7 @@
     "@types/node": "^24.3.0"
   },
   "bin": {
-    "playwright-mcp": "cli.js"
+    "playwright-mcp": "cli.js",
+    "playwright-jev": "src/jev-proxy/cli.js"
   }
 }
