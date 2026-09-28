@@ -58,6 +58,7 @@ class BilController {
     let escalated = false;
     let stopped = false;
     const log = [];
+    const totalUsage = { inputTokens: 0, outputTokens: 0, totalTokens: 0, cost: 0 };
 
     while (true) {
       // 1. Inspect page
@@ -82,6 +83,13 @@ class BilController {
         choice = await this.resolver.resolve(goal, candidates, { pageContext: fingerprint });
       }
 
+      if (choice.usage) {
+        totalUsage.inputTokens += choice.usage.inputTokens || 0;
+        totalUsage.outputTokens += choice.usage.outputTokens || 0;
+        totalUsage.totalTokens += choice.usage.totalTokens || 0;
+        totalUsage.cost += choice.usage.cost || 0;
+      }
+
       steps++;
 
       // Record step
@@ -98,6 +106,7 @@ class BilController {
         ref: choice.ref,
         confidence: choice.confidence,
         candidateCount: candidates.length,
+        usage: choice.usage,
       });
 
       // 6. Check goalState
@@ -157,6 +166,7 @@ class BilController {
       stopped,
       stopReason: this.loopDetector.stopReason,
       log,
+      usage: totalUsage,
     };
   }
 }

@@ -65,7 +65,8 @@ async function runBenchmark(options = {}) {
       try {
         const bilMetrics = await runWithBil(scenario);
         results.push(bilMetrics.toJSON());
-        console.log(`  🔹 BIL:     ${bilMetrics.success ? '✅' : '❌'} ${bilMetrics.steps} steps, ${(bilMetrics.duration / 1000).toFixed(2)}s`);
+        const costStr = bilMetrics.cost > 0 ? `, cost: $${bilMetrics.cost.toFixed(6)}` : '';
+        console.log(`  🔹 BIL:     ${bilMetrics.success ? '✅' : '❌'} ${bilMetrics.steps} steps, ${(bilMetrics.duration / 1000).toFixed(2)}s | Main LLM: ~${bilMetrics.mainLlmTokens} tok, JEV: ${bilMetrics.jevTokens} tok${costStr}`);
       } catch (err) {
         console.error(`  🔹 BIL:     ❌ Error: ${err.message}`);
         const m = new BenchmarkMetrics(scenario.name, 'bil');
@@ -81,7 +82,7 @@ async function runBenchmark(options = {}) {
         const classicMetrics = await runWithClassic(scenario);
         results.push(classicMetrics.toJSON());
         const dataKb = (classicMetrics.rawBytes / 1024).toFixed(1);
-        console.log(`  🔸 CLASSIC: ${classicMetrics.success ? '✅' : '❌'} ${classicMetrics.steps} steps, ${(classicMetrics.duration / 1000).toFixed(2)}s (${classicMetrics.snapshots} snapshots, ${dataKb} KB)`);
+        console.log(`  🔸 CLASSIC: ${classicMetrics.success ? '✅' : '❌'} ${classicMetrics.steps} steps, ${(classicMetrics.duration / 1000).toFixed(2)}s | Main LLM: ~${classicMetrics.mainLlmTokens} tok (${classicMetrics.snapshots} snapshots, ${dataKb} KB)`);
       } catch (err) {
         console.error(`  🔸 CLASSIC: ❌ Error: ${err.message}`);
         const m = new BenchmarkMetrics(scenario.name, 'classic');
@@ -161,6 +162,22 @@ async function runWithBil(scenario) {
     if (stepsMatch) metrics.steps += parseInt(stepsMatch[1], 10);
     if (text.includes('ESCALATED')) metrics.escalations++;
 
+    // Wyciągnij tokeny JEV z raportu
+    const tokensMatch = text.match(/JEV Tokens:\s*(\d+)/i);
+    if (tokensMatch) {
+      metrics.jevTokens = parseInt(tokensMatch[1], 10);
+    }
+
+    const costMatch = text.match(/JEV Cost:\s*\$([0-9.]+)/i);
+    if (costMatch) {
+      metrics.cost = parseFloat(costMatch[1]);
+    }
+
+    // Tokeny głównego LLM: tylko zapytanie { goal: "..." } i krótka odpowiedź statusowa
+    const requestTokens = Math.ceil(scenario.goal.length / 3.5) + 20;
+    const responseTokens = Math.ceil(text.length / 3.5);
+    metrics.mainLlmTokens = requestTokens + responseTokens;
+
     metrics.complete(completed);
   } catch (err) {
     metrics.errors.push(err.message);
@@ -174,15 +191,10 @@ async function runWithBil(scenario) {
 
 /**
  * Uruchomienie scenariusza w wersji CLASSIC (oficjalny Playwright MCP bez proxy).
- *
- * W klasycznym podejściu Playwright MCP:
- * 1. Każda decyzja wymaga przesłania całego surowego snapshota accessibility do klienta.
- * 2. Klient musi zinterpretować surowy DOM i wywoływać osobno narzędzia niskopoziomowe (click/type/fill).
  */
 async function runWithClassic(scenario) {
   const metrics = new BenchmarkMetrics(scenario.name, 'classic');
 
-  // Uruchom bezpośrednio core Playwright MCP (cli.js w głównym katalogu)
   const coreCliPath = path.resolve(__dirname, '../../../cli.js');
   const server = spawn(process.execPath, [coreCliPath, '--headless'], {
     stdio: ['pipe', 'pipe', 'inherit'],
@@ -232,19 +244,16 @@ async function runWithClassic(scenario) {
     metrics.steps++;
 
     const text = snapshotResult?.content?.[0]?.text || '';
-    metrics.rawBytes += Buffer.byteLength(text, 'utf-8');
+    const bytes = Buffer.byteLength(text, 'utf-8');
+    metrics.rawBytes += bytes;
+
+    // Oblicz tokeny surowego snapshota (standard BPE ~3.8 znaku na token)
+    let totalSnapshotTokens = Math.ceil(text.length / 3.8);
 
     // 4. Analiza surowego accessibility tree w poszukiwaniu elementów pasujących do celu
-    const lines = text.split('\n');
-    let matchedRef = null;
-
-    // Szukamy elementów interaktywnych
     const interactiveMatch = text.match(/(button|link|textbox)\s+\[ref=(\w+)\]\s*"([^"]+)"/i);
-    if (interactiveMatch) {
-      matchedRef = interactiveMatch[2];
-    }
+    let matchedRef = interactiveMatch ? interactiveMatch[2] : null;
 
-    // Jeśli cel wymaga wypełnienia lub kliknięcia, symulujemy krok
     if (matchedRef) {
       try {
         await call('tools/call', { name: 'browser_click', arguments: { ref: matchedRef } });
@@ -255,10 +264,14 @@ async function runWithClassic(scenario) {
         metrics.steps++;
         const followUpText = followUp?.content?.[0]?.text || '';
         metrics.rawBytes += Buffer.byteLength(followUpText, 'utf-8');
+        totalSnapshotTokens += Math.ceil(followUpText.length / 3.8);
       } catch {
         // Ignoruj błąd kliknięcia w heurystyce
       }
     }
+
+    // W klasycznym Playwright MCP główny LLM przetwarza surowe snapshoty + definicje narzędzi
+    metrics.mainLlmTokens = totalSnapshotTokens + (metrics.steps * 150);
 
     const hasContent = text.length > 100;
     metrics.complete(hasContent);

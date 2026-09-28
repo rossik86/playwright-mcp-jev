@@ -106,7 +106,14 @@ function parseResolverResponse(jevData, candidates) {
     if (match) ref = match.ref;
   }
 
-  return { ref, confidence, goalState, choiceLabel };
+  const usage = jevData.usage ? {
+    inputTokens: jevData.usage.input_tokens || 0,
+    outputTokens: jevData.usage.output_tokens || 0,
+    totalTokens: (jevData.usage.input_tokens || 0) + (jevData.usage.output_tokens || 0),
+    cost: jevData.usage.cost || 0,
+  } : null;
+
+  return { ref, confidence, goalState, choiceLabel, usage };
 }
 
 /**

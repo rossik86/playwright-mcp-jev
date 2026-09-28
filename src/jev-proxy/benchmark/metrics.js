@@ -14,7 +14,9 @@ class BenchmarkMetrics {
     this.steps = 0;
     this.snapshots = 0;
     this.rawBytes = 0;
-    this.jevTokens = 0;
+    this.mainLlmTokens = 0; // Tokeny obciążające główny LLM klienta
+    this.jevTokens = 0;     // Tokeny zużyte przez lokalny resolver JEV
+    this.cost = 0;          // Koszt wywołań JEV API
     this.escalations = 0;
     this.errors = [];
   }
@@ -37,7 +39,9 @@ class BenchmarkMetrics {
       duration: this.duration,
       snapshots: this.snapshots,
       rawBytes: this.rawBytes,
+      mainLlmTokens: this.mainLlmTokens,
       jevTokens: this.jevTokens,
+      cost: this.cost,
       escalations: this.escalations,
       errors: this.errors,
     };
@@ -64,7 +68,9 @@ function aggregateResults(results) {
       avgDuration: runs.length > 0 ? runs.reduce((s, r) => s + r.duration, 0) / runs.length : 0,
       totalSnapshots: runs.reduce((s, r) => s + (r.snapshots || 0), 0),
       totalRawBytes: runs.reduce((s, r) => s + (r.rawBytes || 0), 0),
-      totalJevTokens: runs.reduce((s, r) => s + (r.jevTokens || 0), 0),
+      avgMainLlmTokens: runs.length > 0 ? Math.round(runs.reduce((s, r) => s + (r.mainLlmTokens || 0), 0) / runs.length) : 0,
+      avgJevTokens: runs.length > 0 ? Math.round(runs.reduce((s, r) => s + (r.jevTokens || 0), 0) / runs.length) : 0,
+      totalCost: runs.reduce((s, r) => s + (r.cost || 0), 0),
       totalEscalations: runs.reduce((s, r) => s + (r.escalations || 0), 0),
     };
   }
@@ -73,37 +79,57 @@ function aggregateResults(results) {
 }
 
 /**
- * Formatuj wyniki jako tabelę.
+ * Formatuj wyniki jako tabelę porównawczą.
  */
 function formatResultsTable(results) {
   const summary = aggregateResults(results);
   const lines = [];
 
-  lines.push('═══════════════════════════════════════════════════════');
-  lines.push('            BENCHMARK RESULTS: BIL vs CLASSIC          ');
-  lines.push('═══════════════════════════════════════════════════════');
+  lines.push('═══════════════════════════════════════════════════════════════════════');
+  lines.push('             BENCHMARK RESULTS: BIL vs CLASSIC PLAYWRIGHT              ');
+  lines.push('═══════════════════════════════════════════════════════════════════════');
   lines.push('');
 
+  const bilStats = summary.bil;
+  const classicStats = summary.classic;
+
   for (const [method, stats] of Object.entries(summary)) {
-    const label = method === 'bil' ? 'BIL (Browser Intent Layer + JEV)' : 'CLASSIC (Vanilla Playwright MCP)';
+    const isBil = method === 'bil';
+    const label = isBil ? 'BIL (Browser Intent Layer + JEV)' : 'CLASSIC (Vanilla Playwright MCP)';
     lines.push(`📊 ${label}`);
-    lines.push(`   Success rate:    ${(stats.successRate * 100).toFixed(1)}% (${stats.total} runs)`);
-    lines.push(`   Avg steps:       ${stats.avgSteps.toFixed(1)}`);
-    lines.push(`   Avg duration:    ${(stats.avgDuration / 1000).toFixed(2)}s`);
-    lines.push(`   Total snapshots: ${stats.totalSnapshots}`);
-    lines.push(`   Snapshot data:   ${(stats.totalRawBytes / 1024).toFixed(1)} KB`);
+    lines.push(`   Success rate:     ${(stats.successRate * 100).toFixed(1)}% (${stats.total} run${stats.total > 1 ? 's' : ''})`);
+    lines.push(`   Avg steps:        ${stats.avgSteps.toFixed(1)}`);
+    lines.push(`   Avg duration:     ${(stats.avgDuration / 1000).toFixed(2)}s`);
+    
+    // Token metrics
+    lines.push(`   Main LLM Tokens:  ~${stats.avgMainLlmTokens.toLocaleString()} tokens/run`);
+    if (isBil) {
+      lines.push(`   JEV Local Tokens: ${stats.avgJevTokens.toLocaleString()} tokens/run (Decisions API)`);
+      if (stats.totalCost > 0) {
+        lines.push(`   JEV Total Cost:   $${stats.totalCost.toFixed(6)}`);
+      }
+      if (classicStats && classicStats.avgMainLlmTokens > 0) {
+        const savings = Math.max(0, (1 - stats.avgMainLlmTokens / classicStats.avgMainLlmTokens) * 100);
+        lines.push(`   Token Savings:    ${savings.toFixed(1)}% less tokens to main LLM context 🚀`);
+      }
+    } else {
+      lines.push(`   Snapshot Payload: ${(stats.totalRawBytes / 1024).toFixed(1)} KB (sent directly to LLM context)`);
+    }
+
     if (stats.totalEscalations > 0) {
-      lines.push(`   Escalations:     ${stats.totalEscalations}`);
+      lines.push(`   Escalations:      ${stats.totalEscalations}`);
     }
     lines.push('');
   }
 
   // Per-scenario breakdown
-  lines.push('─── Per Scenario ───');
+  lines.push('─── Szczegóły per scenariusz ───');
   for (const r of results) {
     const status = r.success ? '✅' : '❌';
-    const bytesInfo = r.rawBytes ? `, ${(r.rawBytes / 1024).toFixed(1)}KB` : '';
-    lines.push(`${status} [${r.method.padEnd(7)}] ${r.scenario}: ${r.steps} steps, ${(r.duration / 1000).toFixed(2)}s${bytesInfo}`);
+    const tokensInfo = r.method === 'bil'
+      ? `Main: ~${r.mainLlmTokens} tok, JEV: ${r.jevTokens} tok`
+      : `Main: ~${r.mainLlmTokens} tok (${(r.rawBytes / 1024).toFixed(1)}KB)`;
+    lines.push(`${status} [${r.method.padEnd(7)}] ${r.scenario}: ${r.steps} steps, ${(r.duration / 1000).toFixed(2)}s | ${tokensInfo}`);
   }
 
   return lines.join('\n');

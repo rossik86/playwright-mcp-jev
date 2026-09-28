@@ -69,6 +69,13 @@ class GoalHandler {
       lines.push(`🛑 STOPPED: ${result.stopReason}`);
     }
 
+    if (result.usage && result.usage.totalTokens > 0) {
+      lines.push(`🪙 JEV Tokens: ${result.usage.totalTokens} (in: ${result.usage.inputTokens}, out: ${result.usage.outputTokens})`);
+      if (result.usage.cost > 0) {
+        lines.push(`💰 JEV Cost: $${result.usage.cost.toFixed(6)}`);
+      }
+    }
+
     if (result.log && result.log.length > 0) {
       lines.push('');
       lines.push('📝 Navigation log:');
