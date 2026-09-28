@@ -33,6 +33,7 @@ class JevProxy {
     this.taskContext = '';
     this.pendingCalls = new Map();
     this.goalHandler = null; // lazy init
+    this._rpcIdCounter = 100000;
     this.child = null;
     this.rlClient = null;
     this.rlChild = null;
@@ -291,7 +292,7 @@ class JevProxy {
    */
   _proxyRpcCall(method, params) {
     return new Promise((resolve, reject) => {
-      const id = Date.now() + Math.random();
+      const id = ++this._rpcIdCounter;
       this.pendingCalls.set(id, {
         method,
         name: params?.name,

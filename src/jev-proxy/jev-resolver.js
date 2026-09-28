@@ -134,7 +134,9 @@ async function resolveWithJev(goal, candidates, jevConfig, options = {}) {
   const questions = buildResolverQuestions(labeled, goal);
 
   try {
-    const decisionsUrl = (jevConfig.baseUrl || 'https://openrouter.ai/api') + '/alpha/decisions';
+    const rawBaseUrl = jevConfig.baseUrl || 'https://openrouter.ai/api';
+    const baseUrl = rawBaseUrl.replace(/\/v1\/?$/, '');
+    const decisionsUrl = `${baseUrl}/alpha/decisions`;
     const response = await fetch(decisionsUrl, {
       method: 'POST',
       headers: {

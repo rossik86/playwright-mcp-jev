@@ -40,7 +40,7 @@ async function runBenchmark(options = {}) {
   console.log(formatResultsTable(results));
 
   // Save to file
-  const outputPath = path.resolve(__dirname, '../../benchmark-results.json');
+  const outputPath = path.resolve(__dirname, '../../../benchmark-results.json');
   fs.writeFileSync(outputPath, JSON.stringify(results, null, 2));
   console.log(`\n📁 Results saved to: ${outputPath}`);
 }
