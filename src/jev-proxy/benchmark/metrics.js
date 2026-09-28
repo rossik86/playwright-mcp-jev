@@ -13,6 +13,7 @@ class BenchmarkMetrics {
     this.success = false;
     this.steps = 0;
     this.snapshots = 0;
+    this.rawBytes = 0;
     this.jevTokens = 0;
     this.escalations = 0;
     this.errors = [];
@@ -35,6 +36,7 @@ class BenchmarkMetrics {
       steps: this.steps,
       duration: this.duration,
       snapshots: this.snapshots,
+      rawBytes: this.rawBytes,
       jevTokens: this.jevTokens,
       escalations: this.escalations,
       errors: this.errors,
@@ -60,9 +62,10 @@ function aggregateResults(results) {
       successRate: runs.length > 0 ? successes.length / runs.length : 0,
       avgSteps: runs.length > 0 ? runs.reduce((s, r) => s + r.steps, 0) / runs.length : 0,
       avgDuration: runs.length > 0 ? runs.reduce((s, r) => s + r.duration, 0) / runs.length : 0,
-      totalSnapshots: runs.reduce((s, r) => s + r.snapshots, 0),
-      totalJevTokens: runs.reduce((s, r) => s + r.jevTokens, 0),
-      totalEscalations: runs.reduce((s, r) => s + r.escalations, 0),
+      totalSnapshots: runs.reduce((s, r) => s + (r.snapshots || 0), 0),
+      totalRawBytes: runs.reduce((s, r) => s + (r.rawBytes || 0), 0),
+      totalJevTokens: runs.reduce((s, r) => s + (r.jevTokens || 0), 0),
+      totalEscalations: runs.reduce((s, r) => s + (r.escalations || 0), 0),
     };
   }
 
@@ -77,18 +80,21 @@ function formatResultsTable(results) {
   const lines = [];
 
   lines.push('═══════════════════════════════════════════════════════');
-  lines.push('                  BENCHMARK RESULTS                   ');
+  lines.push('            BENCHMARK RESULTS: BIL vs CLASSIC          ');
   lines.push('═══════════════════════════════════════════════════════');
   lines.push('');
 
   for (const [method, stats] of Object.entries(summary)) {
-    lines.push(`📊 ${method.toUpperCase()}`);
-    lines.push(`   Success rate:    ${(stats.successRate * 100).toFixed(1)}%`);
+    const label = method === 'bil' ? 'BIL (Browser Intent Layer + JEV)' : 'CLASSIC (Vanilla Playwright MCP)';
+    lines.push(`📊 ${label}`);
+    lines.push(`   Success rate:    ${(stats.successRate * 100).toFixed(1)}% (${stats.total} runs)`);
     lines.push(`   Avg steps:       ${stats.avgSteps.toFixed(1)}`);
-    lines.push(`   Avg duration:    ${(stats.avgDuration / 1000).toFixed(1)}s`);
+    lines.push(`   Avg duration:    ${(stats.avgDuration / 1000).toFixed(2)}s`);
     lines.push(`   Total snapshots: ${stats.totalSnapshots}`);
-    lines.push(`   JEV tokens:      ${stats.totalJevTokens}`);
-    lines.push(`   Escalations:     ${stats.totalEscalations}`);
+    lines.push(`   Snapshot data:   ${(stats.totalRawBytes / 1024).toFixed(1)} KB`);
+    if (stats.totalEscalations > 0) {
+      lines.push(`   Escalations:     ${stats.totalEscalations}`);
+    }
     lines.push('');
   }
 
@@ -96,7 +102,8 @@ function formatResultsTable(results) {
   lines.push('─── Per Scenario ───');
   for (const r of results) {
     const status = r.success ? '✅' : '❌';
-    lines.push(`${status} [${r.method}] ${r.scenario}: ${r.steps} steps, ${(r.duration / 1000).toFixed(1)}s`);
+    const bytesInfo = r.rawBytes ? `, ${(r.rawBytes / 1024).toFixed(1)}KB` : '';
+    lines.push(`${status} [${r.method.padEnd(7)}] ${r.scenario}: ${r.steps} steps, ${(r.duration / 1000).toFixed(2)}s${bytesInfo}`);
   }
 
   return lines.join('\n');
