@@ -28,10 +28,17 @@ class PlaywrightExecutor {
    */
   async executeClick(ref) {
     try {
-      await this.rpcCall('tools/call', {
+      const res = await this.rpcCall('tools/call', {
         name: 'browser_click',
-        arguments: { ref },
+        arguments: { target: ref, ref },
       });
+      if (res && res.isError) {
+        const errText = res.content?.[0]?.text || 'Click failed';
+        if (errText.includes('waiting for scheduled navigations to finish')) {
+          return { status: 'success', pageChanged: true };
+        }
+        return { status: 'error', pageChanged: false, error: errText };
+      }
       return { status: 'success', pageChanged: true };
     } catch (error) {
       return { status: 'error', pageChanged: false, error: error.message };
@@ -47,7 +54,7 @@ class PlaywrightExecutor {
     try {
       await this.rpcCall('tools/call', {
         name: 'browser_fill_form',
-        arguments: { ref, value },
+        arguments: { target: ref, ref, value, fields: [{ target: ref, name: 'input', type: 'textbox', value }] },
       });
       return { status: 'success', pageChanged: false };
     } catch (error) {

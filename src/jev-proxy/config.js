@@ -68,6 +68,9 @@ function buildPlaywrightArgs(cliArgs) {
   const args = [];
   const defaultOutputDir = path.resolve(__dirname, '../../.playwright-mcp');
   args.push('--output-dir', cliArgs.outputDir || defaultOutputDir);
+  args.push('--timeout-action', String(cliArgs.timeoutAction || 25000));
+  const consentBypassPath = path.resolve(__dirname, 'consent-bypass.js');
+  args.push('--init-script', consentBypassPath);
 
   if (cliArgs.browser) args.push('--browser', cliArgs.browser);
   // Playwright MCP jest domyślnie "headed". Flaga --headless włącza tryb bezgłowy.
