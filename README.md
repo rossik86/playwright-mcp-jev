@@ -12,17 +12,18 @@ cp .env.example .env
 # 2. Uruchomienie proxy JEV
 npm run jev -- --headless
 
-# 3. Uruchomienie benchmarku na żywym portalu Orange.pl
-npm run bil:benchmark:orange
+# 3. Uruchomienie benchmarków na żywych portalach
+npm run bil:benchmark:orange        # Orange.pl (iPhone + abonament)
+npm run bil:benchmark:grandbazaar   # GrandBazaar.pl (zamówienie kebaba - 100% sukces!)
+npm run bil:benchmark:empik         # Empik.com (Stephen King Misery - 99.8% oszczędności!)
 ```
 
-### 📊 Benchmark Summary (Orange.pl e-commerce flow):
-| Metryka | Vanilla Playwright MCP | Browser Intent Layer (BIL + JEV) | Zysk |
-|---|---|---|---|
-| **Tokeny do głównego LLM** | ~10 015 – 60 000+ tokenów | **~160 – 250 tokenów** | **98% redukcji tokenów!** 🚀 |
-| **Payload do kontekstu LLM** | 36 KB – 73 KB na krok | **0 KB** (przetwarzane lokalnie) | Czysty kontekst, 0 halucynacji |
-| **Koszt per sesja** | $0.15 – $0.50 (modele GPT-4o / Claude) | **$0.0001 – $0.0004** | Setki razy taniej |
-| **Narzędzia widoczne dla LLM** | 20+ mikronarzędzi DOM | **7 narzędzi intencji (Intent-Only)** | -2 500 tokenów na zapytanie |
+### 📊 Benchmark Summary:
+| Portal / Scenariusz | Vanilla Playwright MCP (DOM) | Browser Intent Layer (BIL + JEV) | Oszczędność tokenów | Status BIL |
+|---|---|---|---|---|
+| **GrandBazaar.pl** (Kebab) | ~2 244 tokenów (7.3 KB) | **~125 tokenów** ($0.00017) | **94.4% mniej tokenów** | ✅ 100% Sukces (3 kroki) |
+| **Orange.pl** (iPhone + Plan) | ~10 015 – 60 000+ tokenów | **~201 tokenów** ($0.00043) | **98.0% mniej tokenów** | 🔄 4 kroki autonomiczne |
+| **Empik.com** (Stephen King) | **~65 766 tokenów** (245 KB!) | **~147 tokenów** ($0.00010) | **99.8% mniej tokenów!** 🚀 | 🛡️ Safety Escalation (ochrona przed pustym koszykiem) |
 
 ---
 

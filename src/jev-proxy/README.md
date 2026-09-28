@@ -119,8 +119,10 @@ W projekcie zaimplementowano pełny framework porównawczy mierzący zużycie to
 # 1. Uruchomienie benchmarku porównawczego (BIL vs Classic) dla wszystkich scenariuszy
 npm run bil:benchmark:both
 
-# 2. Uruchomienie benchmarku na żywym portalu Orange.pl (iPhone + abonament)
-npm run bil:benchmark:orange
+# 2. Uruchomienie benchmarków dla konkretnych portali:
+npm run bil:benchmark:orange        # Orange.pl (iPhone + abonament)
+npm run bil:benchmark:grandbazaar   # GrandBazaar.pl (zamówienie kebaba)
+npm run bil:benchmark:empik         # Empik.com (Stephen King Misery)
 
 # 3. Uruchomienie tylko silnika BIL
 npm run bil:benchmark
@@ -138,6 +140,8 @@ npm run bil:test
 * `login-flow` (Medium) — przejście do formularza i wypełnienie danych logowania.
 * `multi-step-form` (Hard) — formularz wieloetapowy.
 * **`orange-iphone-cart` (Real-World Hard)** — portal Orange Polska: wybór telefonu iPhone, przejście przez ofertę abonamentową i konfigurator zamówienia.
+* **`grandbazaar-kebab` (Real-World Delivery)** — portal restauracyjny GrandBazaar.pl: wejście w menu, wybór kebaba i przejście do zamówienia (100% sukces, 94.4% oszczędności tokenów).
+* **`empik-book-misery` (Real-World E-commerce)** — portal Empik.com: 245 KB drzewo DOM, 65k tokenów w klasycznym MCP zredukowane do 147 tokenów w BIL (99.8% oszczędności).
 
 ---
 

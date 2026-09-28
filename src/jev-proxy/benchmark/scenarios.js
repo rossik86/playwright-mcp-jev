@@ -111,6 +111,24 @@ const SCENARIOS = [
     expectedSteps: 15,
     difficulty: 'hard',
   },
+
+  // === REAL-WORLD RESTAURANT / DELIVERY: GrandBazaar.pl ===
+  {
+    name: 'grandbazaar-kebab',
+    url: 'https://www.grandbazaar.pl/',
+    goal: 'zamów kebaba aż do danych adresowych',
+    expectedSteps: 8,
+    difficulty: 'hard',
+  },
+
+  // === REAL-WORLD E-COMMERCE: Empik.com ===
+  {
+    name: 'empik-book-misery',
+    url: 'https://www.empik.com/',
+    goal: 'dodaj książkę Stephena Kinga Misery do koszyka i przejdź do danych adresowych',
+    expectedSteps: 10,
+    difficulty: 'hard',
+  },
 ];
 
 module.exports = { SCENARIOS };

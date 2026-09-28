@@ -34,7 +34,9 @@
     "bil:benchmark": "node src/jev-proxy/benchmark/runner.js",
     "bil:benchmark:both": "node src/jev-proxy/benchmark/runner.js --both",
     "bil:benchmark:classic": "node src/jev-proxy/benchmark/runner.js --classic",
-    "bil:benchmark:orange": "node src/jev-proxy/benchmark/runner.js --scenario orange-iphone-cart --both"
+    "bil:benchmark:orange": "node src/jev-proxy/benchmark/runner.js --scenario orange-iphone-cart --both",
+    "bil:benchmark:grandbazaar": "node src/jev-proxy/benchmark/runner.js --scenario grandbazaar --both",
+    "bil:benchmark:empik": "node src/jev-proxy/benchmark/runner.js --scenario empik --both"
   },
   "exports": {
     "./package.json": "./package.json",
