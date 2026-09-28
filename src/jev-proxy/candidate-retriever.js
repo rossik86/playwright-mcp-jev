@@ -26,6 +26,11 @@ const READABLE_ROLES = new Set([
   'combobox', 'text', 'statictext', 'paragraph',
 ]);
 
+const STOP_WORDS = new Set([
+  'do', 'na', 'ze', 'za', 'od', 'po', 'we', 'co', 'to', 'oraz', 'dla', 'jak', 'czy', 'jest',
+  'the', 'in', 'on', 'at', 'to', 'for', 'of', 'and', 'with', 'a', 'an', 'is', 'it',
+]);
+
 /**
  * Tokenize text — lowercase, split by non-alphanumeric.
  * @param {string} text
@@ -39,7 +44,7 @@ function tokenize(text) {
       .normalize('NFD')
       .replace(/[\u0300-\u036f]/g, '') // remove diacritics
       .split(/[^a-z0-9ąćęłńóśźż]+/i)
-      .filter(t => t.length > 1)
+      .filter(t => t.length > 1 && !STOP_WORDS.has(t))
   );
 }
 

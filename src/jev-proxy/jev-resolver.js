@@ -48,12 +48,7 @@ function buildResolverQuestions(candidates, goal) {
   }
   choices['none'] = 'Żaden element nie przybliża do celu';
 
-  return {
-    element_choice: {
-      type: 'choice',
-      instructions: `Która opcja najbardziej przybliża do celu: "${goal}"?`,
-      criteria: choices,
-    },
+  const questions = {
     goal_state: {
       type: 'choice',
       instructions: `Jaki jest stan celu "${goal}" na tej stronie?`,
@@ -64,15 +59,29 @@ function buildResolverQuestions(candidates, goal) {
         blocked: 'Nie można osiągnąć celu z tej strony',
       },
     },
-    confidence: {
-      type: 'noul',
-      instructions: `Czy wybrany element jest właściwy dla celu "${goal}"?`,
-      criteria: {
-        true: 'Wysoka pewność że to właściwy element',
-        false: 'Niska pewność, element może nie być właściwy',
-      },
+    element_choice: {
+      type: 'choice',
+      instructions: `Która opcja najbardziej przybliża do celu: "${goal}"?`,
+      criteria: choices,
     },
   };
+
+  // Niezależne pytania noul (skala 0.0–1.0 / 0–100%) dla czołowych kandydatów (max 8)
+  const topCandidates = candidates.slice(0, 8);
+  for (const c of topCandidates) {
+    if (c.label) {
+      questions[`score_${c.label}`] = {
+        type: 'noul',
+        instructions: `W skali 0-1 jak bardzo opcja ${c.label} (${c.role} "${c.name || ''}") przybliża do celu "${goal}"?`,
+        criteria: {
+          true: 'Wysoka pewność, że to właściwy krok (1.0)',
+          false: 'Nie prowadzi do celu (0.0)',
+        },
+      };
+    }
+  }
+
+  return questions;
 }
 
 /**
@@ -96,13 +105,53 @@ function parseResolverResponse(jevData, candidates) {
 
   const choiceLabel = extractVal(answers.element_choice);
   const goalState = extractVal(answers.goal_state) || 'blocked';
-  const rawConfidence = extractVal(answers.confidence);
-  const confidence = typeof rawConfidence === 'number' ? rawConfidence : 0.3;
+
+  // Zbierz niezależne oceny noul dla kandydatów (score_${label})
+  const candidateScores = {};
+  for (const c of candidates) {
+    if (c.label && answers[`score_${c.label}`] !== undefined) {
+      const score = extractVal(answers[`score_${c.label}`]);
+      if (typeof score === 'number') {
+        candidateScores[c.label] = score;
+      }
+    }
+  }
+
+  let bestLabel = choiceLabel;
+  let confidence = 0.3;
+
+  const scoreKeys = Object.keys(candidateScores);
+  if (scoreKeys.length > 0) {
+    // Znajdź kandydata z najwyższym niezależnym wynikiem noul
+    let maxScore = -1;
+    let maxLabel = null;
+    for (const label of scoreKeys) {
+      const s = candidateScores[label];
+      if (s > maxScore) {
+        maxScore = s;
+        maxLabel = label;
+      }
+    }
+
+    // Jeśli najwyższy noul ma solidny wynik (>= 0.50), promuj go na bestLabel
+    if (maxLabel && maxScore >= 0.50) {
+      bestLabel = maxLabel;
+      confidence = maxScore;
+    } else if (choiceLabel && candidateScores[choiceLabel] !== undefined) {
+      confidence = candidateScores[choiceLabel];
+    } else if (maxScore >= 0) {
+      confidence = maxScore;
+    }
+  } else {
+    // Fallback dla pojedynczego pytania confidence (np. w mockach/testach)
+    const rawConfidence = extractVal(answers.confidence);
+    confidence = typeof rawConfidence === 'number' ? rawConfidence : 0.3;
+  }
 
   // Map label → ref
   let ref = null;
-  if (choiceLabel && choiceLabel !== 'none') {
-    const match = candidates.find(c => c.label === choiceLabel);
+  if (bestLabel && bestLabel !== 'none') {
+    const match = candidates.find(c => c.label === bestLabel);
     if (match) ref = match.ref;
   }
 
@@ -113,7 +162,7 @@ function parseResolverResponse(jevData, candidates) {
     cost: jevData.usage.cost || 0,
   } : null;
 
-  return { ref, confidence, goalState, choiceLabel, usage };
+  return { ref, confidence, goalState, choiceLabel: bestLabel, usage, scores: candidateScores };
 }
 
 /**

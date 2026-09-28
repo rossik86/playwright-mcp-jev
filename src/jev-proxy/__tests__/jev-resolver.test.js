@@ -72,4 +72,22 @@ test.describe('jev-resolver – parseResolverResponse', () => {
     expect(result.goalState).toBe('blocked');
     expect(result.confidence).toBeLessThan(0.5);
   });
+
+  test('selects candidate with highest independent score_label (noul)', () => {
+    const jevData = {
+      answers: {
+        goal_state: { choice: 'navigate_toward_goal' },
+        element_choice: { choice: 'A' },
+        score_A: { noul: 0.52 },
+        score_B: { noul: 0.88 }, // Koszyk gets 88%
+        score_C: { noul: 0.12 },
+      },
+    };
+    const result = parseResolverResponse(jevData, CANDIDATES);
+    expect(result.ref).toBe('e3'); // candidate B (Koszyk)
+    expect(result.choiceLabel).toBe('B');
+    expect(result.confidence).toBeCloseTo(0.88, 2);
+    expect(result.scores).toEqual({ A: 0.52, B: 0.88, C: 0.12 });
+  });
 });
+
