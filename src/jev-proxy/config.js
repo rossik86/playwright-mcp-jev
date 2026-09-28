@@ -54,6 +54,7 @@ function loadConfig(cliArgs = {}) {
       apiKey: cliArgs.jevApiKey || process.env.JEV_API_KEY || '',
       baseUrl: cliArgs.jevBaseUrl || process.env.JEV_BASE_URL || DEFAULT_JEV_BASE_URL,
     },
+    intentOnly: cliArgs.fullTools ? false : (cliArgs.intentOnly !== undefined ? cliArgs.intentOnly : (process.env.INTENT_ONLY !== 'false')),
     playwrightArgs: buildPlaywrightArgs(cliArgs),
   };
 }

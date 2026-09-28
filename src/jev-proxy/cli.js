@@ -22,6 +22,8 @@
  *   --cdp-endpoint <url>    Zewnętrzny endpoint CDP
  *   --user-data-dir <path>  Katalog profilu przeglądarki
  *   --image-responses <val> Obsługa obrazów: allow lub omit
+ *   --intent-only           Eksponuj tylko narzędzia intencji/semantyczne (domyślnie włączone)
+ *   --full-tools            Eksponuj wszystkie 27 narzędzi Playwright MCP
  *   -h, --help              Wyświetl tę pomoc
  * ═══════════════════════════════════════════════════════
  */
@@ -61,6 +63,10 @@ function parseArgs(args) {
       parsed.outputDir = args[++i];
     } else if (arg === '--image-responses' && i + 1 < args.length) {
       parsed.imageResponses = args[++i];
+    } else if (arg === '--intent-only') {
+      parsed.intentOnly = true;
+    } else if (arg === '--full-tools') {
+      parsed.fullTools = true;
     }
   }
   return parsed;

@@ -24,6 +24,21 @@ const { extractSnapshot, compressSnapshot } = require('./snapshot-compressor');
 const { analyzeWithJev, formatJevResult } = require('./jev-analyzer');
 const { GoalHandler, BROWSER_GOAL_TOOL } = require('./goal-handler');
 
+/**
+ * Zestaw narzędzi eksponowanych w trybie intencyjnym (intentOnly).
+ * Wszystkie 22 niskopoziomowe narzędzia DOM są ukryte przed zewnętrznym LLM,
+ * a wykonuje je autonomicznie wewnętrzny BIL Controller.
+ */
+const INTENT_ALLOWED_TOOLS = new Set([
+  'browser_goal',
+  'jev_set_context',
+  'browser_navigate',
+  'browser_navigate_back',
+  'browser_take_screenshot',
+  'browser_close',
+  'browser_tabs',
+]);
+
 class JevProxy {
   /**
    * @param {{ jev: { model: string, apiKey: string, baseUrl: string }, playwrightArgs: string[] }} config
@@ -239,6 +254,11 @@ class JevProxy {
           };
           msg.result.tools.unshift(jevTool);
           msg.result.tools.unshift(BROWSER_GOAL_TOOL);
+
+          // W trybie intencji (intentOnly) eksponuj tylko narzędzia semantyczne dla głównego LLM
+          if (this.config.intentOnly) {
+            msg.result.tools = msg.result.tools.filter(t => INTENT_ALLOWED_TOOLS.has(t.name));
+          }
         }
         this.sendToClient(JSON.stringify(msg) + '\n');
         return;
